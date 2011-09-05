@@ -29,16 +29,28 @@ public class FoucsDetailActivity extends Activity {
     public boolean onTouchEvent(MotionEvent event) {
     	if (event.getAction() == MotionEvent.ACTION_DOWN) {
     		Camera.Parameters param = camera.getParameters();
+    		
+    		Log.d("foucs", "now= " + param.getFocusMode());
+    		
     		List< String > foucslist = param.getSupportedFocusModes();
     		
     		for (int i=0;i<foucslist.size();i++) {
     			Log.d("foucs", "type= " + foucslist.get(i));
     		}
-    		param.setFocusMode(Camera.Parameters.FOCUS_MODE_INFINITY);
     		
-    		camera.setParameters(param);
+    		if (param.getFocusMode().compareTo("auto") == 0 ) {
+    			param.setFocusMode(Camera.Parameters.FOCUS_MODE_INFINITY);
+        		camera.setParameters(param);
+        		Log.d("foucs", "set inf");
+    		} else {
+    			param.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
+        		camera.setParameters(param);
+        		camera.autoFocus(null);
+        		Log.d("foucs", "set auto");
+    		}
     		
-    		Log.d("foucs", "now= " + param.getFocusMode());
+    		
+    		Log.d("foucs", "chg= " + param.getFocusMode());
     	}
 		return super.onTouchEvent(event); 
 	}    
