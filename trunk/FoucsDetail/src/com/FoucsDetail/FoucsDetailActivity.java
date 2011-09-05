@@ -29,12 +29,14 @@ public class FoucsDetailActivity extends Activity {
     public boolean onTouchEvent(MotionEvent event) {
     	if (event.getAction() == MotionEvent.ACTION_DOWN) {
     		Camera.Parameters param = camera.getParameters();
-    		List<String> foucslist = param.getSupportedFocusModes();
+    		List< String > foucslist = param.getSupportedFocusModes();
     		
     		for (int i=0;i<foucslist.size();i++) {
     			Log.d("foucs", "type= " + foucslist.get(i));
     		}
     		param.setFocusMode(Camera.Parameters.FOCUS_MODE_INFINITY);
+    		
+    		camera.setParameters(param);
     		
     		Log.d("foucs", "now= " + param.getFocusMode());
     	}
