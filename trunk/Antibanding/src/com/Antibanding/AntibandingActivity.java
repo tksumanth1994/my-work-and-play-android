@@ -16,7 +16,7 @@ import android.view.WindowManager;
 
 public class AntibandingActivity extends Activity {
     /** Called when the activity is first created. */
-    Camera camera;
+    Camera _camera;
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -28,7 +28,7 @@ public class AntibandingActivity extends Activity {
     @Override
     public boolean onTouchEvent(MotionEvent event) {
     	if (event.getAction() == MotionEvent.ACTION_DOWN) {
-    		Camera.Parameters param = camera.getParameters();
+    		Camera.Parameters param = _camera.getParameters();
     		Log.d("camera", "now= " + param.getAntibanding ());
     		List< String > Antibandinglist = param.getSupportedAntibanding ();
     		
@@ -36,7 +36,7 @@ public class AntibandingActivity extends Activity {
     			Log.d("camera", "type= " + Antibandinglist.get(i));
     		}
     		param.setAntibanding(Camera.Parameters.ANTIBANDING_50HZ);
-    		camera.setParameters(param);
+    		_camera.setParameters(param);
     		
     		Log.d("camera", "next= " + param.getAntibanding());
     	}
@@ -59,30 +59,30 @@ public class AntibandingActivity extends Activity {
         }
         
         public void surfaceDestroyed(SurfaceHolder holder) {
-            camera.stopPreview();
-            camera.release();
+            _camera.stopPreview();
+            _camera.release();
         }
 
 		public void surfaceCreated(SurfaceHolder holder) {
-			camera = Camera.open();
+			_camera = Camera.open();
 			try {
-				camera.setPreviewDisplay(holder);
+				_camera.setPreviewDisplay(holder);
 			} catch (IOException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
-			camera.startPreview();
+			_camera.startPreview();
 
 			
 		}
 		protected void setPictureFormat(int format) {
-			Camera.Parameters params = camera.getParameters();
+			Camera.Parameters params = _camera.getParameters();
 			List<Integer> supported = params.getSupportedPictureFormats();
 			if (supported != null) {
 				for (int f : supported) {
 					if (f == format) {
 						params.setPreviewFormat(format);
-						camera.setParameters(params);
+						_camera.setParameters(params);
 						break;
 					}
 				}
@@ -90,23 +90,23 @@ public class AntibandingActivity extends Activity {
 		}
 		
 		protected void setPreviewSize(int width, int height) {
-			Camera.Parameters params = camera.getParameters();
+			Camera.Parameters params = _camera.getParameters();
 			List<Camera.Size> supported = params.getSupportedPreviewSizes();
 			if (supported != null) {
 				for (Camera.Size size : supported) {
 					if (size.width <= width && size.height <= height) {
 						params.setPreviewSize(size.width, size.height);
-						camera.setParameters(params);
+						_camera.setParameters(params);
 						break;
 					}
 				}
 			}
 		}
 		public void configure(int format, int width, int height) {
-			camera.stopPreview();
+			_camera.stopPreview();
 			setPictureFormat(format);
 			setPreviewSize(width, height);
-			camera.startPreview();
+			_camera.startPreview();
 		}
     }    
     
