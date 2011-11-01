@@ -15,7 +15,7 @@ public class CamcorderProfileActivity extends Activity {
         CamcorderProfile profile = CamcorderProfile.get(CamcorderProfile.QUALITY_HIGH);
         
         Log.d("test","quality= " +  profile.quality);
-        Log.d("test","autoBitRate= " +  profile.audioBitRate);
+        Log.d("test","audioBitRate= " +  profile.audioBitRate);
         Log.d("test","audioChannels= " +  profile.audioChannels);
         Log.d("test","audioCodec= " +  profile.audioCodec);
         Log.d("test","audioSampleRate= " +  profile.audioSampleRate);
@@ -30,7 +30,7 @@ public class CamcorderProfileActivity extends Activity {
         profile = CamcorderProfile.get(CamcorderProfile.QUALITY_LOW);
         
         Log.d("test","quality= " +  profile.quality);
-        Log.d("test","autoBitRate= " +  profile.audioBitRate);
+        Log.d("test","audioBitRate= " +  profile.audioBitRate);
         Log.d("test","audioChannels= " +  profile.audioChannels);
         Log.d("test","audioCodec= " +  profile.audioCodec);
         Log.d("test","audioSampleRate= " +  profile.audioSampleRate);
@@ -41,5 +41,6 @@ public class CamcorderProfileActivity extends Activity {
         Log.d("test","videoFrameHeight= " +  profile.videoFrameHeight);
         Log.d("test","videoFrameRate= " +  profile.videoFrameRate);
         Log.d("test","videoFrameWidth= " +  profile.videoFrameWidth);
+        
     }
 }
