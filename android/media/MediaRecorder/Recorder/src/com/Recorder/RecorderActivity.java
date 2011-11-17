@@ -53,7 +53,7 @@ public class RecorderActivity extends Activity implements SurfaceHolder.Callback
 					try {
 						_recorder.prepare();
 					} catch (Exception e) {
-						Log.e("recMovie", e.getMessage());
+						Log.e("test", "recorder error");
 					}
 					_recorder.start();
 					_isRecording = true;
