@@ -1,0 +1,75 @@
+package com.MoreRecorder2;
+
+
+import android.app.Activity;
+import android.media.MediaRecorder;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.MotionEvent;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
+import android.view.Window;
+import android.view.WindowManager;
+
+public class MoreRecorder2Activity extends Activity implements SurfaceHolder.Callback {
+	private MediaRecorder _recorder;
+	private boolean _isRecording;
+	SurfaceHolder _holder;
+
+	@Override
+	public void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
+		setContentView(R.layout.main);
+
+		SurfaceView mySurfaceView = (SurfaceView) findViewById(R.id.surfaceView1);
+		SurfaceHolder holder = mySurfaceView.getHolder();
+		holder.addCallback(this);
+		holder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
+		
+		_recorder = new MediaRecorder();
+	}
+
+	public void surfaceCreated(SurfaceHolder holder) {
+	}
+	public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+		_holder = holder;
+	}
+	public void surfaceDestroyed(SurfaceHolder holder) {
+	}
+
+	@Override
+	public boolean onTouchEvent(MotionEvent event) {
+		if (event.getAction() == MotionEvent.ACTION_DOWN) {
+			if (!_isRecording) {
+				_recorder.setVideoSource(MediaRecorder.VideoSource.DEFAULT);
+				_recorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
+				_recorder.setVideoEncoder(MediaRecorder.VideoEncoder.DEFAULT);
+				
+				_recorder.setVideoEncodingBitRate(10000000);
+
+				_recorder.setVideoFrameRate(5);
+				
+				_recorder.setVideoSize(100, 100);
+				
+				_recorder.setOutputFile("/sdcard/sample.3gp");
+				_recorder.setPreviewDisplay(_holder.getSurface());
+
+				try {
+					_recorder.prepare();
+				} catch (Exception e) {
+					Log.e("test", "recorder error");
+				}
+				_recorder.start();
+				_isRecording = true;
+
+			} else {
+				_recorder.stop();
+				_recorder.reset();
+				_isRecording = false;
+			}
+		}
+		return true;
+	}
+}
