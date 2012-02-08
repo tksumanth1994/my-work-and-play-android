@@ -29,6 +29,7 @@ public class LockActivity extends Activity {
     }
     
 
+    
 
     public void startRecord() {
 		
@@ -40,6 +41,7 @@ public class LockActivity extends Activity {
 
         _mediarecorder.setVideoSource(MediaRecorder.VideoSource.DEFAULT);
         _mediarecorder.setOutputFormat(MediaRecorder.OutputFormat.DEFAULT);
+        _mediarecorder.setVideoSize(640, 480);
         _mediarecorder.setVideoEncoder(MediaRecorder.VideoEncoder.DEFAULT);
 
         _mediarecorder.setOutputFile("/sdcard/sample.3gp");
@@ -107,6 +109,7 @@ public class LockActivity extends Activity {
 
 		public void surfaceCreated(SurfaceHolder holder) {
 			_camera = Camera.open();
+			
 			try {
 				_camera.setPreviewDisplay(holder);
 			} catch (IOException e1) {
