@@ -12,7 +12,7 @@ public class MailSendActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
         
-        String to = new String("y38y38@gmail.com");
+        String to = new String("xxxx@gmail.com");
         String title = new String("Hello");
         String text = new String("test");
         
