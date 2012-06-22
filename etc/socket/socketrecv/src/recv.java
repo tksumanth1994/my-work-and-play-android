@@ -1,7 +1,9 @@
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -15,29 +17,29 @@ public class recv {
 			System.out.println("create sock");
 			ServerSocket svsock = new ServerSocket(5000);
 			for (int i=0;;i++) {
-				FileWriter outFile = null;
-				try {
-					outFile = new FileWriter("xyz" + i + ".mp4");
-				} catch (IOException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
 				System.out.println("accept");
 				Socket sock = svsock.accept();
 				System.out.println("buffer read");
-				BufferedReader in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
-				BufferedWriter wt = new BufferedWriter(outFile);
+				int j = 0;
+				FileOutputStream outFile = null;
+				try {
+					outFile = new FileOutputStream("test/xyz" + i + ".mp4");
+					j++;
+				} catch (IOException e1) {
+					e1.printStackTrace();
+				}
+				InputStream is = sock.getInputStream();
+				byte[] byteBuffer = new byte[10*1024];
+				
 			
 				while(sock.isConnected()) {
-					System.out.println("r");
-					int line = in.read();
-					if (line == -1) {
-						System.out.println("b");
+					int size = is.read(byteBuffer);
+					if (size == -1){
 						break;
+					} else {
+						outFile.write(byteBuffer, 0, size);
 					}
-					System.out.println("w");
-					wt.write(line);
-					System.out.println("wd");
+					System.out.println("wd" + size);
 				}
 				outFile.close();
 				sock.close();
