@@ -23,7 +23,8 @@ public class recv {
 				int j = 0;
 				FileOutputStream outFile = null;
 				try {
-					outFile = new FileOutputStream("test/xyz" + i + ".mp4");
+					outFile = new FileOutputStream("test/xyz" + i + ".dat");
+					System.out.println("test/xyz" + i + ".dat");
 					j++;
 				} catch (IOException e1) {
 					e1.printStackTrace();
@@ -31,7 +32,8 @@ public class recv {
 				InputStream is = sock.getInputStream();
 				byte[] byteBuffer = new byte[10*1024];
 				
-			
+
+				int allsize = 0;
 				while(sock.isConnected()) {
 					int size = is.read(byteBuffer);
 					if (size == -1){
@@ -39,8 +41,10 @@ public class recv {
 					} else {
 						outFile.write(byteBuffer, 0, size);
 					}
-					System.out.println("wd" + size);
+					allsize += size;
+					//System.out.println("wd" + size);
 				}
+				System.out.println("close size=" + allsize);
 				outFile.close();
 				sock.close();
 			}
