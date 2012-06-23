@@ -3,10 +3,12 @@ package com.RecordLocalSocket;
 import android.app.Activity;
 import android.media.MediaRecorder;
 import android.os.Bundle;
+import android.os.Environment;
 
 import java.io.DataOutputStream;
 import java.io.FileDescriptor;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -39,91 +41,115 @@ public class LockActivity extends Activity {
         setContentView(new CameraPreview(this));
     }
     
-
-    public void runLocalSocket() {
-    	
-    	FileOutputStream outFile = null;
-		try {
-			outFile = new FileOutputStream("/sdcard/xyz.mp4");
-	    	FileDescriptor fd = _sl.getReceiverFileDescriptor();
-	    	FileInputStream fr = new FileInputStream(fd);
-			byte[] byteBuffer = new byte[10*1024];
-	    	for(;;) {
-	    		int size = 0;
-    			size = fr.read(byteBuffer);
-				if (size == -1){
-					break;
-				} else {
-					outFile.write(byteBuffer, 0, size);
-				}
-	    	}
-			outFile.close();
-		} catch (IOException e1) {
-			e1.printStackTrace();
+    byte[] code = { 0x00, 0x00,0x00,0x01};
+    
+    public void writeCode(DataOutputStream out) {
+    	try {
+			out.write(code);
+			out.write(_mp.getSPS());
+			out.write(code);
+			out.write(_mp.getPPS());
+			
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
-    	
-    	
-    	
-    	Log.d("camera", "close");
-
     }
-    public void runSocket() {
-        String hostname = "192.168.1.5";
-        int port = 5000;
-		Socket s = null;
-    	DataOutputStream out = null;
-		byte[] byteBuffer = new byte[10*1024];
-		try {
-			s = new Socket(InetAddress.getByName(hostname), port);
-			out = new DataOutputStream(s.getOutputStream());
-	    	FileDescriptor fd = _sl.getReceiverFileDescriptor();
-	    	FileInputStream fr = new FileInputStream(fd);
-	    	for(;;) {
-	    		int size = 0;
-    			size = fr.read(byteBuffer);
-				if (size == -1){
-					break;
-				} else {
-					out.write(byteBuffer, 0, size);
+    
+    //writestate
+    //= 0 initialized
+    //= 1 get mdat
+    //= 2 get size 1byte
+    //= 3 get size 2byte
+    //= 4 get size 3byte
+    //= 5 get size 4byte
+    //= 6 get data but no completed.
+    //= 1 get data and send data.
+    int writeStateToGetSizeCount(int state) {
+    	return (state - 1);
+    }
+    int SizeCountToWriteState(int size) {
+    	return size + 1;
+    }
+    int _writestate = 0;
+    byte[] _mdatbuf = { 0x00, 0x00,0x00,0x00};
+    byte[] _datasize = { 0x00, 0x00, 0x00,0x00};
+	int _sendsize = 0;
+    
+    public void writeData(DataOutputStream out, byte[] buffer, int size ) {
+    	int offset = 0;
+    	while(true) {
+    		if (_writestate == 0) {
+        		for (;offset != size;) {
+        			_mdatbuf[3] = buffer[offset];
+        			offset++;
+        			if ((_mdatbuf[0] == 'm') && (_mdatbuf[1] == 'd') && (_mdatbuf[2] == 'a') && (_mdatbuf[3] == 't')) {
+        				_writestate = 1;
+        				break;
+        			} else {
+        				_mdatbuf[0] = _mdatbuf[1];
+        				_mdatbuf[1] = _mdatbuf[2];
+        				_mdatbuf[2] = _mdatbuf[3];
+        			}
+        			
+        		}
+        		if (_writestate != 1) {
+        			return;
+        		}
+    		} 
+    		if ((_writestate == 1)||(_writestate == 2) ||(_writestate == 3)||(_writestate == 4)) {
+    			int getsize = writeStateToGetSizeCount(_writestate);
+       			for (int i = getsize;i<4;i++) {
+       				_datasize[i] = buffer[offset];
+       				getsize = i + 1;
+       				_writestate = SizeCountToWriteState(getsize);
+       				offset++;
+       				if (offset == size) {
+       					//buffer is none, wait buffer and get next buffer.
+       					return;
+       				} else {
+       				
+       				}
+       			}
+       			if (_writestate == 5) {
+       				_sendsize = ((_datasize[0] << 24)&0xff000000)|((_datasize[1]<<16)&0xff0000)|((_datasize[2]<<8)&0xff00)|(_datasize[3]&0xff);
+       				Log.d("send", "0=" + _datasize[0]);
+       				Log.d("send", "1=" + _datasize[1]);
+       				Log.d("send", "2=" + _datasize[2]);
+       				Log.d("send", "3=" + _datasize[3]);
+       				Log.d("send", "_writestate5 Sendsize=" + _sendsize);
+       				try {
+						out.write(code);
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+
+       			}
+    		}
+    		if ((_writestate == 5)|| (_writestate == 6)) {
+   				try {
+   					if ( (size - offset) - _sendsize >= 0) {
+   						Log.d("send", "offset = " + offset );
+   						Log.d("send", "size = " + size );
+   						Log.d("send", "sendsize = " + _sendsize);
+   						
+						out.write(buffer, offset, _sendsize);
+						offset += _sendsize;
+						_writestate = 1;
+   					} else if ((size - offset) - _sendsize < 0){
+   						out.write(buffer, offset, size - offset);
+   						_sendsize -= size - offset;
+   						Log.d("send", "xsendsize = " + _sendsize);
+   						_writestate = 6;
+   						return;
+   					}
+				} catch (IOException e) {
+					e.printStackTrace();
 				}
-	    	}
-    		out.close();
-    		s.close();
-		} catch (UnknownHostException e3) {
-			// TODO Auto-generated catch block
-			e3.printStackTrace();
-		} catch (IOException e3) {
-			// TODO Auto-generated catch block
-			e3.printStackTrace();
-		}
+    		}
+    	}
     	
     }
-
-    public void startRecord() {
-		
-		_camera.unlock();
-		
-    	_mediarecorder = new MediaRecorder();
-        
-		_mediarecorder.setCamera(_camera);
-
-        _mediarecorder.setVideoSource(MediaRecorder.VideoSource.DEFAULT);
-        _mediarecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-        _mediarecorder.setVideoSize(640, 480);
-        _mediarecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
-
-        
-        _sl = new LocalSocketLoop("sample");
-        _sl.InitLoop();
-        _mediarecorder.setOutputFile(_sl.getSenderFileDescriptor());
-        _mediarecorder.setPreviewDisplay(_holder.getSurface());
-
-		try {
-			_mediarecorder.prepare();
-			_mediarecorder.start();
-		} catch (Exception e) {
-			Log.d("camera", "err");
-		}
+    public void sendData() {
 		  new Thread(new Runnable() {
 			    @Override
 			    public void run() {
@@ -134,22 +160,19 @@ public class LockActivity extends Activity {
 					try {
 						s = new Socket(InetAddress.getByName(hostname), port);
 					} catch (UnknownHostException e3) {
-						// TODO Auto-generated catch block
 						e3.printStackTrace();
 					} catch (IOException e3) {
-						// TODO Auto-generated catch block
 						e3.printStackTrace();
 					}
-			    	
-			    	FileOutputStream outFile = null;
 			    	DataOutputStream out = null;
 					try {
 						out = new DataOutputStream(s.getOutputStream());
-						//outFile = new FileOutputStream("/sdcard/xyz"  + ".mp4");
 						j++;
 					} catch (IOException e1) {
 						e1.printStackTrace();
 					}
+					writeCode(out);
+					
 			    	FileDescriptor fd = _sl.getReceiverFileDescriptor();
 			    	FileInputStream fr = new FileInputStream(fd);
 			    	
@@ -164,13 +187,8 @@ public class LockActivity extends Activity {
 								if (size == -1){
 									break;
 								} else {
-									try {
-										out.write(byteBuffer, 0, size);
-										//outFile.write(byteBuffer, 0, size);
-									} catch (IOException e) {
-										// TODO Auto-generated catch block
-										e.printStackTrace();
-									}
+									
+									writeData(out, byteBuffer, size);
 								}
 			    				
 			    			} else {
@@ -184,36 +202,91 @@ public class LockActivity extends Activity {
 			    	try {
 			    		out.close();
 			    		s.close();
-						//outFile.close();
 					} catch (IOException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
+			    	_sl.ReleaseLoop();
 			    	Log.d("camera", "close");
 
 			    }
 			  }).start();    	
-    	
+    }
+    public void startRecord(FileDescriptor fd, String path) {
+		
+		_camera.unlock();
+		
+    	_mediarecorder = new MediaRecorder();
+        
+		_mediarecorder.setCamera(_camera);
+
+        _mediarecorder.setVideoSource(MediaRecorder.VideoSource.DEFAULT);
+        _mediarecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+        _mediarecorder.setVideoSize(640, 480);
+        _mediarecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
+
+
+        if (fd != null ) {
+        	_mediarecorder.setOutputFile(fd);
+        } else {
+        	_mediarecorder.setOutputFile(path);
+        }
+        _mediarecorder.setPreviewDisplay(_holder.getSurface());
+
+		try {
+			_mediarecorder.prepare();
+			_mediarecorder.start();
+		} catch (Exception e) {
+			Log.d("camera", "err");
+		}
     }
     void stopRecord() {
 		_mediarecorder.stop();
 		_mediarecorder.reset();
 		_mediarecorder.release();
+		_camera.lock();
     }
+    public synchronized void sleep(long msec)
+    {	
+    	try
+    	{
+    		wait(msec);
+    	}catch(InterruptedException e){}
+    }    
+    int counter = 0;
     boolean isRecording = false;
+    MP4Config _mp = null;
     @Override
     public boolean onTouchEvent(MotionEvent event) {
     	if (event.getAction() == MotionEvent.ACTION_DOWN) {
     		if (isRecording == false) {
     			isRecording = true;
 				Log.d("camera", "start record");
-    			startRecord();
+				
+				startRecord(null, Environment.getExternalStorageDirectory() + "/sample.mp4");
+				sleep(200);
+				stopRecord();
+		        try {
+		        	_mp = new MP4Config(Environment.getExternalStorageDirectory() + "/sample.mp4");
+				} catch (FileNotFoundException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
+		        _sl = new LocalSocketLoop("sample" + counter);
+		        counter++;
+		        _sl.InitLoop();
+		        
+		        startRecord(_sl.getSenderFileDescriptor(), null);
+		        sendData();
     			
     			
     		} else {
 				Log.d("camera", "stop record");
     			stopRecord();
-				_camera.lock();
     			isRecording = false;
     		}
      	}
