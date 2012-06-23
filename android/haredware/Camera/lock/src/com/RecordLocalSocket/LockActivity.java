@@ -178,7 +178,7 @@ public class LockActivity extends Activity {
 			    	
 			    	
 					byte[] byteBuffer = new byte[10*1024];
-			    	
+					_writestate = 0;
 			    	while(isRecording) {
 			    		int size = 0;
 			    		try {
